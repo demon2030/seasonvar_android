@@ -64,7 +64,7 @@ public class MovieAdapter extends BaseAdapter {
         current.setText(m.getCurrent());
         season.setText(m.getSeason());
         update.setText(m.getLastUpdate() + " - " + m.getLastDate());
-        new DownloadImageTask(img).execute(m.getImg());
+//        new DownloadImageTask(img).execute(m.getImg());
         return convertView;
     }
 

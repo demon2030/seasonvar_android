@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import ru.seasonvar.seasonvarmobile.R;
@@ -23,6 +25,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main_form);
         preferences = getApplicationContext().getSharedPreferences("SeasonvarSettings", Context.MODE_PRIVATE);
 
@@ -39,14 +42,28 @@ public class MainActivity extends Activity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (SeasonvarHttpClient.getInstance().login(login.getText().toString(), password.getText().toString())) {
-                    preferences.edit()
-                            .putString("login", login.getText().toString())
-                            .putString("password", password.getText().toString())
-                    .apply();
-                    Intent list = new Intent(MainActivity.this, MovieListActivity.class);
-                    startActivity(list);
-                }
+                setProgressBarIndeterminateVisibility(true);
+                new AsyncTask(){
+                    boolean result = false;
+                    @Override
+                    protected Object doInBackground(Object[] params) {
+                        result = SeasonvarHttpClient.getInstance().login(login.getText().toString(), password.getText().toString());
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Object o) {
+                        setProgressBarIndeterminateVisibility(false);
+                        if (result) {
+                            preferences.edit()
+                                    .putString("login", login.getText().toString())
+                                    .putString("password", password.getText().toString())
+                                    .apply();
+                            Intent list = new Intent(MainActivity.this, MovieListActivity.class);
+                            startActivity(list);
+                        }
+                    }
+                }.execute();
             }
         });
         login.setText(preferences.getString("login", null));

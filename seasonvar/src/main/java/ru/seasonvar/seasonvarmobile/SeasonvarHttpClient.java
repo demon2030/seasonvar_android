@@ -113,11 +113,12 @@ public class SeasonvarHttpClient {
             response.close();
         }
         String html = outputStream.toString("UTF8");
+        Log.d("sd", html);
         //http://seasonvar.ru/?wserial=no&0.12871506065130234
         //http://seasonvar.ru/plStat.php
         //http://temp-cdn.datalock.ru/crossdomain.xml
         //http://temp-cdn.datalock.ru/fi2lm/2c672de96f114872f4a9e49b5908c03c/7f_greys.anatomy.s11e01.rus.hdtv.1080p.foxlife.a1.06.11.14.mp4
-        Jsoup.parse(html).select("");
+//        Jsoup.parse(html).select("");
 
 //        Intent intent = new Intent(Intent.ACTION_VIEW);
 //        intent.setDataAndType(Uri.parse(videoPath), "video/mp4");
