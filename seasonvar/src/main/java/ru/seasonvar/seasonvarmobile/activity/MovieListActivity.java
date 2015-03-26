@@ -41,23 +41,24 @@ public class MovieListActivity extends Activity {
                 final Movie m = adapter.getItem(position);
                 new AsyncTask() {
 
-                    private String url;
+                    private List<String> urls;
 
                     @Override
                     protected void onPostExecute(Object o) {
                         Log.i("good", "all good");
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        Uri videoUri = Uri.parse("https://www.dropbox.com/s/rki2gup2vp50erl/tetris.mp4?dl=1");
-                        intent.setDataAndType(videoUri, "application/x-mpegURL");
-                        intent.setPackage("com.mxtech.videoplayer.ad");
-                        startActivity(intent);
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        Uri videoUri = Uri.parse("https://www.dropbox.com/s/rki2gup2vp50erl/tetris.mp4?dl=1");
+//                        intent.setDataAndType(videoUri, "application/x-mpegURL");
+//                        intent.setPackage("com.mxtech.videoplayer.ad");
+//                        startActivity(intent);
                     }
 
                     @Override
                     protected Object doInBackground(Object[] params) {
                         Log.i("good?", "are all good?");
                         try {
-                            url = SeasonvarHttpClient.getInstance().getVideoUrl(m, 1);
+
+                            urls = SeasonvarHttpClient.getInstance().getSerialVideoList(m);
                         } catch (URISyntaxException e) {
                             Log.e("error", e.getMessage(), e);
                         } catch (IOException e) {

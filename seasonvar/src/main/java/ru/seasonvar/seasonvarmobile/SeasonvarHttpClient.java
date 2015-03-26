@@ -19,6 +19,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SeasonvarHttpClient {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36";
@@ -85,7 +87,11 @@ public class SeasonvarHttpClient {
                 movie.setLink(element.select("a").first().attr("href"));
                 movie.setImg(element.select("img.img").first().attr("src"));
                 movie.setTitle(element.select(".title").first().text());
-                movie.setSeason(element.select(".season").first().text());
+                try {
+                    movie.setSeason(element.select(".season").first().text());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 movie.setLastDate(element.select(".last").first().text());
                 Elements translate = element.select(".lastupd, .translate");
                 if (translate.size() > 0){
@@ -98,6 +104,7 @@ public class SeasonvarHttpClient {
         }
         return result;
     }
+
     public String getVideoUrl(Movie m, int episode) throws URISyntaxException, IOException {
         HttpUriRequest req = RequestBuilder.get()
                 .setUri(new URI(m.getLink()))
@@ -125,6 +132,56 @@ public class SeasonvarHttpClient {
 //        startActivity(intent);
         //http://stackoverflow.com/questions/14559406/launch-mx-player-through-intent
         return "";
+    }
+
+
+    public List<String> getSerialVideoList(Movie m) throws URISyntaxException, IOException {
+        ArrayList<String> list = new ArrayList<String>();
+        HttpUriRequest req = RequestBuilder.get()
+                .setUri(new URI(m.getLink()))
+                .addHeader("User-Agent", USER_AGENT)
+                .build();
+        CloseableHttpResponse response = httpClient.execute(req);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            HttpEntity entity = response.getEntity();
+            entity.consumeContent();
+            entity.writeTo(outputStream);
+        } finally {
+            response.close();
+        }
+        String html = outputStream.toString("UTF8");
+//        Log.d("sd", html);
+        Elements elements = Jsoup.parse(html).select("#videoplayer719");
+        String playerHtml = elements.outerHtml();
+        Pattern pattern = Pattern.compile("pl=(.+?)&uid");
+        Matcher matcher = pattern.matcher(playerHtml);
+        String code = "";
+        if (matcher.find()){
+            code = matcher.group();
+        }
+        Log.d(code, code);
+        String dataUrl = elements.select("object[data]").text();
+
+        req = RequestBuilder.get()
+                .setUri(new URI(dataUrl))
+                .addHeader("User-Agent", USER_AGENT)
+                .build();
+        response = httpClient.execute(req);
+        outputStream = new ByteArrayOutputStream();
+        try {
+            HttpEntity entity = response.getEntity();
+            entity.consumeContent();
+            entity.writeTo(outputStream);
+        } finally {
+            response.close();
+        }
+
+        String decoded = HashDecode.decode(code);
+        Log.d(decoded, decoded);
+
+
+        return list;
     }
 
     public void close(){
