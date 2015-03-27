@@ -1,14 +1,20 @@
 package ru.seasonvar.seasonvarmobile.activity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import org.json.JSONException;
+import org.json.JSONObject;
 import ru.seasonvar.seasonvarmobile.MovieAdapter;
 import ru.seasonvar.seasonvarmobile.R;
 import ru.seasonvar.seasonvarmobile.SeasonvarHttpClient;
@@ -41,16 +47,20 @@ public class MovieListActivity extends Activity {
                 final Movie m = adapter.getItem(position);
                 new AsyncTask() {
 
-                    private List<String> urls;
+                    private List<JSONObject> urls;
 
                     @Override
                     protected void onPostExecute(Object o) {
-                        Log.i("good", "all good");
-//                        Intent intent = new Intent(Intent.ACTION_VIEW);
-//                        Uri videoUri = Uri.parse("https://www.dropbox.com/s/rki2gup2vp50erl/tetris.mp4?dl=1");
-//                        intent.setDataAndType(videoUri, "application/x-mpegURL");
-//                        intent.setPackage("com.mxtech.videoplayer.ad");
-//                        startActivity(intent);
+                        try {
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            Uri videoUri = Uri.parse(urls.get(urls.size() - 1).getString("file"));
+                            intent.setDataAndType(videoUri, "application/x-mpegURL");
+                            intent.setPackage("com.mxtech.videoplayer.ad");
+                            startActivity(intent);
+                        } catch (JSONException e) {
+                            Log.e("error", e.getMessage(), e);
+                        }
+
                     }
 
                     @Override
@@ -62,6 +72,8 @@ public class MovieListActivity extends Activity {
                         } catch (URISyntaxException e) {
                             Log.e("error", e.getMessage(), e);
                         } catch (IOException e) {
+                            Log.e("error", e.getMessage(), e);
+                        } catch (JSONException e) {
                             Log.e("error", e.getMessage(), e);
                         }
                         return null;

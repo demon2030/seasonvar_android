@@ -1,6 +1,10 @@
 package ru.seasonvar.seasonvarmobile;
 
+import android.content.Context;
 import android.util.Log;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -8,6 +12,10 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,6 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,9 +35,10 @@ public class SeasonvarHttpClient {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36";
     private static CloseableHttpClient httpClient;
     private static SeasonvarHttpClient instance = new SeasonvarHttpClient();
+    private final BasicCookieStore cookieStore;
 
     private SeasonvarHttpClient() {
-        BasicCookieStore cookieStore = new BasicCookieStore();
+        cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom()
                 .setDefaultCookieStore(cookieStore)
                 .build();
@@ -105,7 +115,9 @@ public class SeasonvarHttpClient {
         return result;
     }
 
-    public String getVideoUrl(Movie m, int episode) throws URISyntaxException, IOException {
+    public List<JSONObject> getSerialVideoList(Movie m) throws URISyntaxException, IOException, JSONException {
+        ArrayList<JSONObject> list = new ArrayList<JSONObject>();
+        cookieStore.addCookie(new BasicClientCookie("html5default", "1"));
         HttpUriRequest req = RequestBuilder.get()
                 .setUri(new URI(m.getLink()))
                 .addHeader("User-Agent", USER_AGENT)
@@ -120,29 +132,37 @@ public class SeasonvarHttpClient {
             response.close();
         }
         String html = outputStream.toString("UTF8");
-        Log.d("sd", html);
-        //http://seasonvar.ru/?wserial=no&0.12871506065130234
-        //http://seasonvar.ru/plStat.php
-        //http://temp-cdn.datalock.ru/crossdomain.xml
-        //http://temp-cdn.datalock.ru/fi2lm/2c672de96f114872f4a9e49b5908c03c/7f_greys.anatomy.s11e01.rus.hdtv.1080p.foxlife.a1.06.11.14.mp4
-//        Jsoup.parse(html).select("");
+        Elements elements = Jsoup.parse(html).select("script");
+        String script = "";
+        for (Element el : elements) {
+            if (el.outerHtml().contains("$(\"#videoplayer719\").load(\"player.php\"")){
+                script = el.outerHtml();
+                break;
+            }
+        }
+        Pattern p = Pattern.compile("secure\\\"\\: \"(\\w+)\\\"\\}\\);");
 
-//        Intent intent = new Intent(Intent.ACTION_VIEW);
-//        intent.setDataAndType(Uri.parse(videoPath), "video/mp4");
-//        startActivity(intent);
-        //http://stackoverflow.com/questions/14559406/launch-mx-player-through-intent
-        return "";
-    }
+        Matcher matcher = p.matcher(script);
+        matcher.find();
+        String secure = matcher.group(1);
 
+        p = Pattern.compile("serial\\\"\\: \"(\\w+)\"");
+        matcher = p.matcher(script);
+        matcher.find();
+        String serial = matcher.group(1);
 
-    public List<String> getSerialVideoList(Movie m) throws URISyntaxException, IOException {
-        ArrayList<String> list = new ArrayList<String>();
-        HttpUriRequest req = RequestBuilder.get()
-                .setUri(new URI(m.getLink()))
+        req = RequestBuilder.post()
+                .setUri(new URI("http://seasonvar.ru/player.php"))
+                .addParameter("id", m.getId().substring(1))
+                .addParameter("serial", serial)
+                .addParameter("type", "html5")
+                .addParameter("secure", secure)
                 .addHeader("User-Agent", USER_AGENT)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("X-Requested-With", "XMLHttpRequest")
                 .build();
-        CloseableHttpResponse response = httpClient.execute(req);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        response = httpClient.execute(req);
+        outputStream = new ByteArrayOutputStream();
         try {
             HttpEntity entity = response.getEntity();
             entity.consumeContent();
@@ -150,21 +170,21 @@ public class SeasonvarHttpClient {
         } finally {
             response.close();
         }
-        String html = outputStream.toString("UTF8");
-//        Log.d("sd", html);
-        Elements elements = Jsoup.parse(html).select("#videoplayer719");
-        String playerHtml = elements.outerHtml();
-        Pattern pattern = Pattern.compile("pl=(.+?)&uid");
-        Matcher matcher = pattern.matcher(playerHtml);
-        String code = "";
-        if (matcher.find()){
-            code = matcher.group();
-        }
-        Log.d(code, code);
-        String dataUrl = elements.select("object[data]").text();
+        String playerPHP = outputStream.toString("UTF8");
+        p = Pattern.compile("pl\":\"(.+?)\"");
+        matcher = p.matcher(playerPHP);
+        matcher.find();
+        String xmlUrl = "http://seasonvar.ru" + matcher.group(1);
+
+        p = Pattern.compile("var arFiles = \\{(.+?)\\}");
+        matcher = p.matcher(playerPHP);
+        matcher.find();
+        String fix = "{" + matcher.group(1) + "}";
+        JSONObject fixMap = new JSONObject(fix);
+
 
         req = RequestBuilder.get()
-                .setUri(new URI(dataUrl))
+                .setUri(new URI(xmlUrl))
                 .addHeader("User-Agent", USER_AGENT)
                 .build();
         response = httpClient.execute(req);
@@ -176,10 +196,26 @@ public class SeasonvarHttpClient {
         } finally {
             response.close();
         }
-
-        String decoded = HashDecode.decode(code);
-        Log.d(decoded, decoded);
-
+        String file = outputStream.toString();
+        JSONObject json = new JSONObject(file);
+        JSONArray playlist = json.getJSONArray("playlist");
+        for (int i=0; i < playlist.length(); i++){
+            JSONObject episode = playlist.getJSONObject(i);
+            list.add(episode);
+            String f = episode.getString("file");
+            f = f.substring(0, f.lastIndexOf("/")+1);
+            String code = episode.getString("galabel");
+            code = code.substring(code.indexOf("_")+1);
+            Iterator keys = fixMap.keys();
+            while (keys.hasNext()){
+                String key = (String) keys.next();
+                if (fixMap.getString(key).equals(code)){
+                    f =f+key;
+                    break;
+                }
+            }
+            episode.put("file", f);
+        }
 
         return list;
     }
