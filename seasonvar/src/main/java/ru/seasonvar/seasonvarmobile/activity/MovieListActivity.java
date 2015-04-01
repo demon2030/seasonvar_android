@@ -2,12 +2,14 @@ package ru.seasonvar.seasonvarmobile.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -37,6 +39,7 @@ public class MovieListActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
         listView = (ListView) findViewById(R.id.listView);
         adapter = new MovieAdapter(movieList, this);
@@ -51,16 +54,35 @@ public class MovieListActivity extends Activity {
 
                     @Override
                     protected void onPostExecute(Object o) {
-                        try {
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            Uri videoUri = Uri.parse(urls.get(urls.size() - 1).getString("file"));
-                            intent.setDataAndType(videoUri, "application/x-mpegURL");
-                            intent.setPackage("com.mxtech.videoplayer.ad");
-                            startActivity(intent);
-                        } catch (JSONException e) {
-                            Log.e("error", e.getMessage(), e);
+
+                        CharSequence[] episodes = new CharSequence[urls.size()];
+                        for (int i = 0; i < urls.size(); i++) {
+                            JSONObject url = urls.get(i);
+                            try {
+                                episodes[i] = url.getString("comment");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                episodes[i] = "";
+                            }
                         }
 
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MovieListActivity.this);
+                        builder.setTitle("Select episode");
+                        builder.setItems(episodes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                try {
+                                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                                    Uri videoUri = Uri.parse(urls.get(which).getString("file"));
+                                    intent.setDataAndType(videoUri, "application/x-mpegURL");
+                                    intent.setPackage("com.mxtech.videoplayer.ad");
+                                    startActivity(intent);
+                                } catch (JSONException e) {
+                                    Log.e("error", e.getMessage(), e);
+                                }
+                                         }
+                        });
+                        builder.show();
                     }
 
                     @Override
@@ -69,11 +91,7 @@ public class MovieListActivity extends Activity {
                         try {
 
                             urls = SeasonvarHttpClient.getInstance().getSerialVideoList(m);
-                        } catch (URISyntaxException e) {
-                            Log.e("error", e.getMessage(), e);
-                        } catch (IOException e) {
-                            Log.e("error", e.getMessage(), e);
-                        } catch (JSONException e) {
+                        } catch (Exception e) {
                             Log.e("error", e.getMessage(), e);
                         }
                         return null;
