@@ -6,6 +6,7 @@
     <ImageView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:background="@drawable/list_placeholder"
             android:id="@+id/imageView" android:scaleType="fitXY"/>
     <LinearLayout
             android:orientation="vertical"
@@ -15,20 +16,24 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="test"
                 android:id="@+id/title"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="test"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:id="@+id/season"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="test"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:id="@+id/current"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="test"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:id="@+id/update"/>
     </LinearLayout>

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import ru.seasonvar.seasonvarmobile.entity.Movie;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
@@ -47,32 +49,45 @@ public class MovieAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        ViewHolder holder;
         if (convertView == null){
             LayoutInflater inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            holder = new ViewHolder();
             convertView = inflater.inflate(R.layout.movie_list_item, parent, false);
+            holder.titleView = (TextView) convertView.findViewById(R.id.title);
+            holder.seasonView = (TextView) convertView.findViewById(R.id.season);
+            holder.currentView = (TextView) convertView.findViewById(R.id.current);
+            holder.updateView = (TextView) convertView.findViewById(R.id.update);
+            holder.imageView= (ImageView) convertView.findViewById(R.id.imageView);
+            convertView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
-
-        TextView title = (TextView) convertView.findViewById(R.id.title);
-        TextView season = (TextView) convertView.findViewById(R.id.season);
-        TextView current = (TextView) convertView.findViewById(R.id.current);
-        TextView update = (TextView) convertView.findViewById(R.id.update);
-        ImageView img = (ImageView) convertView.findViewById(R.id.imageView);
-
         Movie m = getItem(position);
 
-        title.setText(m.getTitle());
-        current.setText(m.getCurrent());
-        season.setText(m.getSeason());
-        update.setText(m.getLastUpdate() + " - " + m.getLastDate());
-//        new DownloadImageTask(img).execute(m.getImg());
+        holder.titleView.setText(m.getTitle());
+        holder.currentView.setText(m.getCurrent());
+        holder.seasonView.setText(m.getSeason());
+        holder.updateView.setText(m.getLastUpdate() + " - " + m.getLastDate());
+        if (holder.imageView!= null){
+            new DownloadImageTask(holder.imageView).execute(m.getImg());
+        }
         return convertView;
     }
 
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
+    static class ViewHolder {
+        TextView titleView;
+        TextView seasonView;
+        TextView currentView;
+        TextView updateView;
+        ImageView imageView;
+    }
 
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        private final WeakReference<ImageView> imageViewReference;
+
+        public DownloadImageTask(ImageView imageView) {
+            imageViewReference = new WeakReference<ImageView>(imageView);
         }
 
         protected Bitmap doInBackground(String... urls) {
@@ -88,8 +103,22 @@ public class MovieAdapter extends BaseAdapter {
             return mIcon11;
         }
 
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
+        protected void onPostExecute(Bitmap bitmap) {
+            if (isCancelled()) {
+                bitmap = null;
+            }
+
+            if (imageViewReference != null) {
+                ImageView imageView = imageViewReference.get();
+                if (imageView != null) {
+                    if (bitmap != null) {
+                        imageView.setImageBitmap(bitmap);
+                    } else {
+                        Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.list_placeholder);
+                        imageView.setImageDrawable(placeholder);
+                    }
+                }
+            }
         }
     }
 }
