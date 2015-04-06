@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
         Button btnCancel = (Button) findViewById(R.id.cancelBtn);
         Button btnLogin = (Button) findViewById(R.id.loginBtn);
         final EditText login = (EditText) findViewById(R.id.login);
+        btnLogin.requestFocus();
         final EditText password = (EditText) findViewById(R.id.password);
         btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
         });
         login.setText(preferences.getString("login", null));
         password.setText(preferences.getString("password", null));
-        if (password.getText().length()>0) {
+        if (login.getText().length()>0) {
             btnLogin.performClick();
         }
     }
