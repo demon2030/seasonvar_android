@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,6 +25,7 @@ public class MovieAdapter extends BaseAdapter {
 
     private List<Movie> data;
     private Activity activity;
+    private final ImageDownloader imageDownloader = new ImageDownloader();
 
     public MovieAdapter(List<Movie> data, Activity activity) {
         this.data = data;
@@ -70,7 +70,8 @@ public class MovieAdapter extends BaseAdapter {
         holder.seasonView.setText(m.getSeason());
         holder.updateView.setText(m.getLastUpdate() + " - " + m.getLastDate());
         if (holder.imageView!= null){
-            new DownloadImageTask(holder.imageView).execute(m.getImg());
+            imageDownloader.download(m.getImg(), holder.imageView);
+//            new DownloadImageTask(holder.imageView).execute(m.getImg());
         }
         return convertView;
     }
@@ -107,15 +108,14 @@ public class MovieAdapter extends BaseAdapter {
             if (isCancelled()) {
                 bitmap = null;
             }
-
             if (imageViewReference != null) {
                 ImageView imageView = imageViewReference.get();
                 if (imageView != null) {
                     if (bitmap != null) {
                         imageView.setImageBitmap(bitmap);
-                    } else {
-                        Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.list_placeholder);
-                        imageView.setImageDrawable(placeholder);
+//                    } else {
+//                        Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.list_placeholder);
+//                        imageView.setImageDrawable(placeholder);
                     }
                 }
             }

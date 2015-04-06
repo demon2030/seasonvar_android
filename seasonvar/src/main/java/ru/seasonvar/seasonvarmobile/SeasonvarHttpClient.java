@@ -6,6 +6,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -101,12 +102,14 @@ public class SeasonvarHttpClient {
                 try {
                     movie.setSeason(element.select(".season").first().text());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    movie.setSeason("");
                 }
                 movie.setLastDate(element.select(".last").first().text());
                 Elements translate = element.select(".lastupd, .translate");
                 if (translate.size() > 0){
                     movie.setLastUpdate(translate.first().text());
+                } else {
+                    movie.setLastUpdate("");
                 }
                 result.add(movie);
             }
@@ -220,6 +223,27 @@ public class SeasonvarHttpClient {
 
         Collections.reverse(list);
         return list;
+    }
+
+    public void markEpisode(Movie m, int episode){
+        String url = "http://seasonvar.ru/jsonMark.php";
+        try {
+            HttpUriRequest req = RequestBuilder.post()
+                    .setUri(new URI(url))
+                    .addParameter("id", m.getId().substring(1))
+                    .addParameter("pauseadd", "true")
+                    .addParameter("seria", ""+episode)
+                    .addHeader("User-Agent", USER_AGENT)
+                    .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                    .addHeader("X-Requested-With", "XMLHttpRequest")
+                    .build();
+            CloseableHttpResponse response = httpClient.execute(req);
+            response.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     public void close(){

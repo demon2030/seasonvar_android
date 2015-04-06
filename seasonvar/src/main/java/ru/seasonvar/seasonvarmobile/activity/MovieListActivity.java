@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -24,6 +25,7 @@ import java.util.List;
 
 public class MovieListActivity extends Activity {
 
+    private static final int PLAY_CODE = 12345;
     private ListView listView;
     private final List<Movie> movieList = new ArrayList<Movie>();
     private MovieAdapter adapter;
@@ -65,11 +67,23 @@ public class MovieListActivity extends Activity {
                             public void onClick(DialogInterface dialog, int which) {
                                 try {
                                     Intent intent = new Intent(Intent.ACTION_VIEW);
-                                    Uri videoUri = null;
-                                    videoUri = Uri.parse(urls.get(which).getString("file"));
-                                    intent.setDataAndType(videoUri, "application/x-mpegURL");
-                                    intent.setPackage("com.mxtech.videoplayer.ad");
-                                    startActivity(intent);
+                                    ArrayList<Uri> list = new ArrayList<Uri>();
+                                    int i = which;
+                                    while (i >= 0){
+                                        list.add(Uri.parse(urls.get(i).getString("file")));
+                                        i--;
+                                    }
+                                    intent.setDataAndType(Uri.parse(urls.get(which).getString("file")), "application/x-mpegURL");
+                                    intent.putExtra("video_list", list.toArray(new Uri[list.size()]));
+                                    intent.putExtra("return_result", true);
+
+                                    try {
+                                        intent.setPackage("com.mxtech.videoplayer.pro");
+                                        startActivityForResult(intent, PLAY_CODE);
+                                    } catch (Exception e){
+                                        intent.setPackage("com.mxtech.videoplayer.ad");
+                                        startActivityForResult(intent, PLAY_CODE);
+                                    }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
@@ -110,6 +124,15 @@ public class MovieListActivity extends Activity {
             }
         }.execute();
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+//        if (requestCode == PLAY_CODE){
+//            System.out.println("data = " + data);
+//            System.out.println("data.getData() = " + data.getData());
+//        }
     }
 
     @Override
