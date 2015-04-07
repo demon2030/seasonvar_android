@@ -104,6 +104,11 @@ public class SeasonvarHttpClient {
                 } catch (Exception e) {
                     movie.setSeason("");
                 }
+                try {
+                    movie.setCurrent(element.select(".current").text());
+                } catch (Exception e) {
+                    movie.setCurrent("");
+                }
                 movie.setLastDate(element.select(".last").first().text());
                 Elements translate = element.select(".lastupd, .translate");
                 if (translate.size() > 0){
@@ -183,8 +188,15 @@ public class SeasonvarHttpClient {
         p = Pattern.compile("var arFiles = \\{(.+?)\\}");
         matcher = p.matcher(playerPHP);
         matcher.find();
-        String fix = "{" + matcher.group(1) + "}";
-        JSONObject fixMap = new JSONObject(fix);
+        String arFiles = "{" + matcher.group(1) + "}";
+        JSONObject arFilesMap = new JSONObject(arFiles);
+
+
+        p = Pattern.compile("var arEpisodes = \\{(.+?)\\}");
+        matcher = p.matcher(playerPHP);
+        matcher.find();
+        String arEpisodes = "{" + matcher.group(1) + "}";
+        JSONObject arEpisodesMap = new JSONObject(arFiles);
 
 
         req = RequestBuilder.get()
@@ -210,16 +222,18 @@ public class SeasonvarHttpClient {
             f = f.substring(0, f.lastIndexOf("/")+1);
             String code = episode.getString("galabel");
             code = code.substring(code.indexOf("_")+1);
-            Iterator keys = fixMap.keys();
+            Iterator keys = arFilesMap.keys();
             while (keys.hasNext()){
                 String key = (String) keys.next();
-                if (fixMap.getString(key).equals(code)){
+                if (arFilesMap.getString(key).equals(code)){
                     f =f+key;
                     break;
                 }
             }
             episode.put("file", f);
         }
+
+        m.setEpisodesMap(arEpisodesMap);
 
         Collections.reverse(list);
         return list;
@@ -232,25 +246,18 @@ public class SeasonvarHttpClient {
                     .setUri(new URI(url))
                     .addParameter("id", m.getId().substring(1))
                     .addParameter("pauseadd", "true")
-                    .addParameter("seria", ""+episode)
+                    .addParameter("seria", "" + episode)
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("Content-Type", "application/x-www-form-urlencoded")
                     .addHeader("X-Requested-With", "XMLHttpRequest")
                     .build();
             CloseableHttpResponse response = httpClient.execute(req);
             response.close();
+            m.setLastViewed(episode);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (URISyntaxException e) {
             e.printStackTrace();
-        }
-    }
-
-    public void close(){
-        try {
-            httpClient.close();
-        } catch (IOException e) {
-            Log.e("Error", e.getMessage(), e);
         }
     }
 }

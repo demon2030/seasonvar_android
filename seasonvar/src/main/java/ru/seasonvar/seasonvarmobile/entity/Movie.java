@@ -1,5 +1,9 @@
 package ru.seasonvar.seasonvarmobile.entity;
 
+import org.json.JSONObject;
+
+import java.util.List;
+
 /**
  * Created by Andrey_Demidenko on 2/2/2015 3:26 PM.
  */
@@ -12,6 +16,11 @@ public class Movie {
     private String img;
     private String lastDate;
     private String lastUpdate;
+
+    private int lastViewed;
+
+    private List<JSONObject> urls;
+    private JSONObject episodesMap;
 
     public Movie() {
     }
@@ -46,6 +55,11 @@ public class Movie {
 
     public void setCurrent(String current) {
         this.current = current;
+        try{
+            setLastViewed(Integer.parseInt(current.substring(0, current.indexOf(" "))));
+        } catch (Exception e){
+
+        }
     }
 
     public String getLink() {
@@ -78,5 +92,29 @@ public class Movie {
 
     public void setImg(String img) {
         this.img = img;
+    }
+
+    public List<JSONObject> getUrls() {
+        return urls;
+    }
+
+    public void setUrls(List<JSONObject> urls) {
+        this.urls = urls;
+    }
+
+    public JSONObject getEpisodesMap() {
+        return episodesMap;
+    }
+
+    public void setEpisodesMap(JSONObject episodesMap) {
+        this.episodesMap = episodesMap;
+    }
+
+    public int getLastViewed() {
+        return lastViewed;
+    }
+
+    public void setLastViewed(int lastViewed) {
+        this.lastViewed = lastViewed;
     }
 }

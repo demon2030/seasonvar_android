@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -30,6 +29,8 @@ public class MovieListActivity extends Activity {
     private final List<Movie> movieList = new ArrayList<Movie>();
     private MovieAdapter adapter;
 
+    private Movie currentMovie = null;
+
     /**
      * Called when the activity is first created.
      */
@@ -47,17 +48,17 @@ public class MovieListActivity extends Activity {
                 final Movie m = adapter.getItem(position);
                 new AsyncTask() {
 
-                    private List<JSONObject> urls;
+//                    private List<JSONObject> urls;
 
                     @Override
                     protected void onPostExecute(Object o) {
-                        CharSequence[] episodes = new CharSequence[urls.size()];
-                        for (int i = 0; i < urls.size(); i++) {
-                            JSONObject url = urls.get(i);
+                        CharSequence[] episodes = new CharSequence[m.getUrls().size()];
+                        for (int i = 0; i < m.getUrls().size(); i++) {
+                            JSONObject url = m.getUrls().get(i);
                             try {
                                 episodes[i] = url.getString("comment").replaceAll("<br>", " ");
                             } catch (JSONException e) {
-                                e.printStackTrace();
+                                Log.e(this.getClass().getName(), e.getMessage(), e);
                                 episodes[i] = "";
                             }
                         }
@@ -70,13 +71,14 @@ public class MovieListActivity extends Activity {
                                     ArrayList<Uri> list = new ArrayList<Uri>();
                                     int i = which;
                                     while (i >= 0){
-                                        list.add(Uri.parse(urls.get(i).getString("file")));
+                                        list.add(Uri.parse(m.getUrls().get(i).getString("file")));
                                         i--;
                                     }
-                                    intent.setDataAndType(Uri.parse(urls.get(which).getString("file")), "application/x-mpegURL");
+                                    intent.setDataAndType(Uri.parse(m.getUrls().get(which).getString("file")), "application/x-mpegURL");
                                     intent.putExtra("video_list", list.toArray(new Uri[list.size()]));
                                     intent.putExtra("return_result", true);
 
+                                    currentMovie = m;
                                     try {
                                         intent.setPackage("com.mxtech.videoplayer.pro");
                                         startActivityForResult(intent, PLAY_CODE);
@@ -85,7 +87,7 @@ public class MovieListActivity extends Activity {
                                         startActivityForResult(intent, PLAY_CODE);
                                     }
                                 } catch (JSONException e) {
-                                    e.printStackTrace();
+                                    Log.e(this.getClass().getName(), e.getMessage(), e);
                                 }
                             }
                         });
@@ -96,12 +98,13 @@ public class MovieListActivity extends Activity {
                     protected Object doInBackground(Object[] params) {
                         Log.i("good?", "are all good?");
                         try {
-
-                            urls = SeasonvarHttpClient.getInstance().getSerialVideoList(m);
+                            if (m.getUrls() == null){
+                                m.setUrls(SeasonvarHttpClient.getInstance().getSerialVideoList(m));
+                            }
                         } catch (Exception e) {
-                            Log.e("error", e.getMessage(), e);
+                            Log.e(this.getClass().getName(), e.getMessage(), e);
                         }
-                        return null;
+                        return m.getUrls();
                     }
                 }.execute();
             }
@@ -129,10 +132,33 @@ public class MovieListActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode == PLAY_CODE){
-//            System.out.println("data = " + data);
-//            System.out.println("data.getData() = " + data.getData());
-//        }
+        if (requestCode == PLAY_CODE && data != null){
+            Uri lastFileUrl = data.getData();
+            int episode = -1;
+            List<JSONObject> urls = currentMovie.getUrls();
+            for (int i = 0; i < urls.size(); i++) {
+                JSONObject json = urls.get(i);
+                try {
+                    if (json.getString("file").equals(lastFileUrl.toString())) {
+                        episode = urls.size() - i;
+                        break;
+                    }
+                } catch (JSONException e) {
+                    Log.e(this.getClass().getName(), e.getMessage(), e);
+                }
+            }
+            if (episode > 0){
+                final int ep = episode;
+                new AsyncTask(){
+                    @Override
+                    protected Object doInBackground(Object[] params) {
+                        SeasonvarHttpClient.getInstance().markEpisode(currentMovie, ep);
+                        return null;
+                    }
+                }.execute();
+
+            }
+        }
     }
 
     @Override
