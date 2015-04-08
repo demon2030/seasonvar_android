@@ -1,4 +1,4 @@
-package ru.seasonvar.seasonvarmobile;
+package ru.seasonvar.seasonvarmobile.activity.utils;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;

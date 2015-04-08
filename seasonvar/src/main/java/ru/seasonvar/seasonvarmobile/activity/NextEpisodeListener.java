@@ -1,4 +1,4 @@
-package ru.seasonvar.seasonvarmobile;
+package ru.seasonvar.seasonvarmobile.activity;
 
 import android.view.View;
 import org.json.JSONException;

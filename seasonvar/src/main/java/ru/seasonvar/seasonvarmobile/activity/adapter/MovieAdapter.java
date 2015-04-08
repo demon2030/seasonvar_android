@@ -1,4 +1,4 @@
-package ru.seasonvar.seasonvarmobile;
+package ru.seasonvar.seasonvarmobile.activity.adapter;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,6 +11,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import org.json.JSONException;
+import ru.seasonvar.seasonvarmobile.activity.utils.ImageDownloader;
+import ru.seasonvar.seasonvarmobile.activity.NextEpisodeListener;
+import ru.seasonvar.seasonvarmobile.R;
 import ru.seasonvar.seasonvarmobile.entity.Movie;
 
 import java.util.List;
