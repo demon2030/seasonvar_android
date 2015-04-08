@@ -97,8 +97,6 @@ public class MovieListActivity extends Activity {
                 final Movie m = adapter.getItem(position);
                 new AsyncTask() {
 
-//                    private List<JSONObject> urls;
-
                     @Override
                     protected void onPostExecute(Object o) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(MovieListActivity.this);
