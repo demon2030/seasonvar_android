@@ -2,30 +2,28 @@ package ru.seasonvar.seasonvarmobile;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import org.json.JSONException;
 import ru.seasonvar.seasonvarmobile.entity.Movie;
 
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
  * Created by Andrey_Demidenko on 2/2/2015 4:45 PM.
  */
-public class MovieAdapter extends BaseAdapter {
+public class MovieAdapter extends BaseAdapter{
 
     private List<Movie> data;
     private Activity activity;
     private final ImageDownloader imageDownloader = new ImageDownloader();
+    private NextEpisodeListener nextEpisodeListener;
 
     public MovieAdapter(List<Movie> data, Activity activity) {
         this.data = data;
@@ -48,7 +46,7 @@ public class MovieAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
         if (convertView == null){
             LayoutInflater inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -59,6 +57,17 @@ public class MovieAdapter extends BaseAdapter {
             holder.currentView = (TextView) convertView.findViewById(R.id.current);
             holder.updateView = (TextView) convertView.findViewById(R.id.update);
             holder.imageView= (ImageView) convertView.findViewById(R.id.imageView);
+            holder.viewNext = (ImageButton) convertView.findViewById(R.id.viewNextEpisode);
+            holder.viewNext.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        nextEpisodeListener.onItemClickListener(v, position);
+                    } catch (JSONException e) {
+                        Log.e(MovieAdapter.class.getName(), e.getMessage(), e);
+                    }
+                }
+            });
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -71,9 +80,15 @@ public class MovieAdapter extends BaseAdapter {
         holder.updateView.setText(m.getLastUpdate() + " - " + m.getLastDate());
         if (holder.imageView!= null){
             imageDownloader.download(m.getImg(), holder.imageView);
-//            new DownloadImageTask(holder.imageView).execute(m.getImg());
         }
+
+        holder.imageView.setFocusable(false);
+        holder.imageView.setFocusableInTouchMode(false);
         return convertView;
+    }
+
+    public void setNextEpisodeListener(NextEpisodeListener nextEpisodeListener) {
+        this.nextEpisodeListener = nextEpisodeListener;
     }
 
     static class ViewHolder {
@@ -82,43 +97,6 @@ public class MovieAdapter extends BaseAdapter {
         TextView currentView;
         TextView updateView;
         ImageView imageView;
-    }
-
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        private final WeakReference<ImageView> imageViewReference;
-
-        public DownloadImageTask(ImageView imageView) {
-            imageViewReference = new WeakReference<ImageView>(imageView);
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap bitmap) {
-            if (isCancelled()) {
-                bitmap = null;
-            }
-            if (imageViewReference != null) {
-                ImageView imageView = imageViewReference.get();
-                if (imageView != null) {
-                    if (bitmap != null) {
-                        imageView.setImageBitmap(bitmap);
-//                    } else {
-//                        Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.list_placeholder);
-//                        imageView.setImageDrawable(placeholder);
-                    }
-                }
-            }
-        }
+        ImageButton viewNext;
     }
 }

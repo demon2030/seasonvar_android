@@ -174,7 +174,7 @@ public class ImageDownloader {
     Bitmap downloadBitmap2(String url) {
         final int IO_BUFFER_SIZE = 4 * 1024;
 
-        // AndroidHttpClient is not allowed to be used from the main thread
+        // AndroidHttpClient is not allowed to be used from the movie_list thread
         final HttpClient client = //(mode == Mode.NO_ASYNC_TASK) ? new DefaultHttpClient() :
                 AndroidHttpClient.newInstance("Android");
         final HttpGet getRequest = new HttpGet(url);

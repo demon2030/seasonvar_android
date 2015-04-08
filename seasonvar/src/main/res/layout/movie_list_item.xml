@@ -2,48 +2,64 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="horizontal"
               android:layout_width="fill_parent"
-              android:layout_height="match_parent">
+              android:focusableInTouchMode="false"
+              android:focusable="false"
+              android:descendantFocusability="blocksDescendants"
+              android:layout_height="wrap_content">
     <ImageView
             android:layout_width="93dp"
             android:layout_height="124dp"
-            android:id="@+id/imageView"/>
-    <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:id="@+id/imageView"
+            android:focusableInTouchMode="false"
+            android:focusable="false"/>
+
+    <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:focusableInTouchMode="false"
+            android:focusable="false">
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
+                android:focusableInTouchMode="false"
+                android:focusable="false"
                 android:text="test"
-                android:id="@+id/title"/>
+                android:id="@+id/title" android:layout_gravity="left"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="test"
+                android:focusableInTouchMode="false"
+                android:focusable="false"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:id="@+id/season"/>
+                android:id="@+id/season" android:layout_alignParentTop="true" android:layout_alignParentLeft="true" android:layout_marginTop="21dp"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="test"
+                android:focusableInTouchMode="false"
+                android:focusable="false"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:id="@+id/current"/>
+                android:id="@+id/current" android:layout_below="@+id/season" android:layout_alignParentLeft="true"/>
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="test"
+                android:focusableInTouchMode="false"
+                android:focusable="false"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:id="@+id/update"/>
-    </LinearLayout>
-    <Space
-            android:layout_width="20px"
-            android:layout_height="20px"
-            android:layout_weight="3"/>
-    <ImageButton
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:id="@+id/viewNextEpisode"
-            android:src="@drawable/neye"
-            android:contentDescription="@string/app_name" android:layout_gravity="center_horizontal|right"/>
+                android:id="@+id/update" android:layout_alignParentBottom="true" android:layout_alignParentLeft="true"/>
+        <ImageButton
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:id="@+id/viewNextEpisode"
+                android:src="@drawable/neye"
+                android:contentDescription="@string/app_name" android:layout_gravity="center_horizontal|right" android:layout_alignParentTop="false"
+                android:layout_alignParentRight="true" android:layout_centerInParent="true"
+                android:focusableInTouchMode="false"
+                android:focusable="false"
+                android:clickable="false"
+                />
+    </RelativeLayout>
 </LinearLayout>

@@ -1,13 +1,17 @@
 package ru.seasonvar.seasonvarmobile.entity;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by Andrey_Demidenko on 2/2/2015 3:26 PM.
  */
-public class Movie {
+public class Movie implements Parcelable {
     private String id;
     private String title;
     private String season;
@@ -17,7 +21,7 @@ public class Movie {
     private String lastDate;
     private String lastUpdate;
 
-    private int lastViewed;
+    private int lastViewed = -1;
 
     private List<JSONObject> urls;
     private JSONObject episodesMap;
@@ -55,9 +59,9 @@ public class Movie {
 
     public void setCurrent(String current) {
         this.current = current;
-        try{
+        try {
             setLastViewed(Integer.parseInt(current.substring(0, current.indexOf(" "))));
-        } catch (Exception e){
+        } catch (Exception e) {
 
         }
     }
@@ -117,4 +121,72 @@ public class Movie {
     public void setLastViewed(int lastViewed) {
         this.lastViewed = lastViewed;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(title);
+        dest.writeString(season);
+        dest.writeString(current);
+        dest.writeString(link);
+        dest.writeString(img);
+        dest.writeString(lastDate);
+        dest.writeString(lastUpdate);
+        dest.writeInt(lastViewed);
+        List<String> u = new ArrayList<String>();
+        if (urls != null){
+            for (JSONObject url : urls) {
+                u.add(url.toString());
+            }
+        }
+        dest.writeStringList(u);
+        dest.writeString(episodesMap != null ? episodesMap.toString(): "null");
+    }
+
+    public Movie(Parcel in) throws JSONException {
+        id = in.readString();
+        title = in.readString();
+        season = in.readString();
+        current = in.readString();
+        link = in.readString();
+        img = in.readString();
+        lastDate = in.readString();
+        lastUpdate = in.readString();
+        lastViewed = in.readInt();
+        List<String> u = new ArrayList<String>();
+        in.readStringList(u);
+        if (!u.isEmpty()){
+            urls = new ArrayList<JSONObject>();
+            for (String s : u) {
+                urls.add(new JSONObject(s));
+            }
+        }
+        String s = in.readString();
+        if (!s.equals("null")){
+            episodesMap = new JSONObject(s);
+        }
+    }
+
+
+
+    public static final Parcelable.Creator<Movie> CREATOR
+            = new Parcelable.Creator<Movie>() {
+        public Movie createFromParcel(Parcel in) {
+            try {
+                return new Movie(in);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        public Movie[] newArray(int size) {
+            return new Movie[size];
+        }
+    };
 }

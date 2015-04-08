@@ -74,8 +74,8 @@ public class SeasonvarHttpClient {
         return instance;
     }
 
-    public List<Movie> getMovieList(){
-        List<Movie> result = new ArrayList<Movie>();
+    public ArrayList<Movie> getMovieList(){
+        ArrayList<Movie> result = new ArrayList<Movie>();
         try {
             HttpUriRequest pause = RequestBuilder.get()
                     .setUri(new URI("http://seasonvar.ru/?mod=pause"))
@@ -214,29 +214,38 @@ public class SeasonvarHttpClient {
         }
         String file = outputStream.toString();
         JSONObject json = new JSONObject(file);
-        JSONArray playlist = json.getJSONArray("playlist");
-        for (int i=0; i < playlist.length(); i++){
-            JSONObject episode = playlist.getJSONObject(i);
-            list.add(episode);
-            String f = episode.getString("file");
-            f = f.substring(0, f.lastIndexOf("/")+1);
-            String code = episode.getString("galabel");
-            code = code.substring(code.indexOf("_")+1);
-            Iterator keys = arFilesMap.keys();
-            while (keys.hasNext()){
-                String key = (String) keys.next();
-                if (arFilesMap.getString(key).equals(code)){
-                    f =f+key;
-                    break;
-                }
-            }
-            episode.put("file", f);
-        }
+        parsePlaylist(list, arFilesMap, json);
 
         m.setEpisodesMap(arEpisodesMap);
 
         Collections.reverse(list);
         return list;
+    }
+
+    private void parsePlaylist(ArrayList<JSONObject> list, JSONObject arFilesMap, JSONObject json) throws JSONException {
+        JSONArray playlist = json.getJSONArray("playlist");
+        for (int i=0; i < playlist.length(); i++){
+            JSONObject episode = playlist.getJSONObject(i);
+            if (episode.has("playlist")){
+                parsePlaylist(list, arFilesMap, episode);
+            } else {
+                list.add(episode);
+                String f = episode.getString("file");
+                f = f.substring(0, f.lastIndexOf("/")+1);
+                String code = episode.getString("galabel");
+                code = code.substring(code.indexOf("_")+1);
+                Iterator keys = arFilesMap.keys();
+                while (keys.hasNext()){
+                    String key = (String) keys.next();
+                    if (arFilesMap.getString(key).equals(code)){
+                        f =f+key;
+                        break;
+                    }
+                }
+                episode.put("file", f);
+            }
+
+        }
     }
 
     public void markEpisode(Movie m, int episode){
