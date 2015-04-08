@@ -2,16 +2,22 @@ package ru.seasonvar.seasonvarmobile.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -100,7 +106,52 @@ public class MovieListActivity extends Activity {
                     @Override
                     protected void onPostExecute(Object o) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(MovieListActivity.this);
-                        builder.setItems(convertToCharSequences(m.getUrls()), new DialogInterface.OnClickListener() {
+                        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        View episodeList = inflater.inflate(R.layout.episode_list_item, null, false);
+                        builder.setView(episodeList);
+                        final CharSequence[] items = convertToCharSequences(m.getUrls());
+                        builder.setAdapter(new BaseAdapter() {
+                            @Override
+                            public int getCount() {
+                                return items.length;
+                            }
+
+                            @Override
+                            public Object getItem(int position) {
+                                return items[position];
+                            }
+
+                            @Override
+                            public long getItemId(int position) {
+                                return position;
+                            }
+
+                            @Override
+                            public View getView(int position, View convertView, ViewGroup parent) {
+                                TextView episodeName;
+                                if (convertView == null){
+                                    LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                                    convertView = inflater.inflate(R.layout.episode_list_item, parent, false);
+                                    episodeName = (TextView) convertView.findViewById(R.id.episodeName);
+                                    convertView.setTag(episodeName);
+                                } else {
+                                    episodeName = (TextView) convertView.getTag();
+                                }
+                                String name = items[position].toString();
+                                episodeName.setText(name);
+                                int i = m.getUrls().size() - m.getLastViewed() - 1;
+                                if (position > i){
+                                    episodeName.setTextColor(Color.GRAY);
+                                } else {
+                                    if (position == i){
+                                        episodeName.setTextColor(Color.RED);
+                                    } else {
+                                        episodeName.setTextColor(Color.GREEN);
+                                    }
+                                }
+                                return convertView;
+                            }
+                        }, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 try {
@@ -240,11 +291,5 @@ public class MovieListActivity extends Activity {
 
             }
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-//        SeasonvarHttpClient.getInstance().close();
     }
 }
