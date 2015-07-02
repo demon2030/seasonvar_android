@@ -91,8 +91,9 @@ public class SeasonvarHttpClient {
                 response3.close();
             }
             String utf8 = outputStream.toString("UTF8");
-            Elements elements = Jsoup.parse(utf8).select("div.section > div > div.newrap, div.mark_col");
+            Elements elements = Jsoup.parse(utf8).select("div.section > div.visible > div.newrap, div.section > div.visible > div.wrap > div.mark_col");
             for (Element element : elements) {
+                if(element.hasClass("block")) continue;
                 Log.d("Parser", element.text());
                 Movie movie = new Movie();
                 movie.setId(element.id());
