@@ -33,9 +33,13 @@ public class MovieAdapter extends BaseAdapter{
         this.activity = activity;
     }
 
+    public void setData(List<Movie> data) {
+        this.data = data;
+    }
+
     @Override
     public int getCount() {
-        return data.size();
+        return data!= null ? data.size() : 0;
     }
 
     @Override

@@ -1,12 +1,8 @@
 package ru.seasonvar.seasonvarmobile;
 
-import android.content.Context;
 import android.util.Log;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.widget.Toast;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -18,11 +14,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import ru.seasonvar.seasonvarmobile.entity.Movie;
+import ru.seasonvar.seasonvarmobile.entity.MovieList;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,7 +45,7 @@ public class SeasonvarHttpClient {
                 .build();
     }
 
-    public boolean login(final String login, final String password){
+    public boolean login(final String login, final String password) {
         boolean result = false;
         try {
             HttpUriRequest httpget = RequestBuilder.get()
@@ -70,12 +69,13 @@ public class SeasonvarHttpClient {
         return result;
     }
 
-    public static SeasonvarHttpClient getInstance(){
+    public static SeasonvarHttpClient getInstance() {
         return instance;
     }
 
-    public ArrayList<Movie> getMovieList(){
-        ArrayList<Movie> result = new ArrayList<Movie>();
+    public MovieList getMovieList() {
+        Log.i("SeasonvarHttpClient", "getMovieList started");
+        MovieList result = new MovieList();
         try {
             HttpUriRequest pause = RequestBuilder.get()
                     .setUri(new URI("http://seasonvar.ru/?mod=pause"))
@@ -90,46 +90,64 @@ public class SeasonvarHttpClient {
             } finally {
                 response3.close();
             }
+            Log.i("SeasonvarHttpClient", "get request done");
             String utf8 = outputStream.toString("UTF8");
-            Elements elements = Jsoup.parse(utf8).select("div.section > div.visible > div.newrap, div.section > div.visible > div.wrap > div.mark_col");
-            for (Element element : elements) {
-                if(element.hasClass("block")) continue;
-                Log.d("Parser", element.text());
-                Movie movie = new Movie();
-                movie.setId(element.id());
-                movie.setLink(element.select("a").first().attr("href"));
-                movie.setImg(element.select("img.img").first().attr("src"));
-                movie.setTitle(element.select(".title").first().text());
-                try {
-                    movie.setSeason(element.select(".season").first().text());
-                } catch (Exception e) {
-                    movie.setSeason("");
-                }
-                try {
-                    movie.setCurrent(element.select(".current").text());
-                } catch (Exception e) {
-                    movie.setCurrent("");
-                }
-                movie.setLastDate(element.select(".last").first().text());
-                Elements translate = element.select(".lastupd, .translate");
-                if (translate.size() > 0){
-                    movie.setLastUpdate(translate.first().text());
-                } else {
-                    movie.setLastUpdate("");
-                }
-                result.add(movie);
-            }
+            Document document = Jsoup.parse(utf8);
+            Log.i("SeasonvarHttpClient", "parse string");
+            Elements hasNew = document.select("div.section > div.visible > div.newrap, div.section > div.visible > div.wrap > div.mark_col");
+            Log.i("SeasonvarHttpClient", "select new items");
+//            Elements noSeries = Jsoup.parse(utf8).select("div.section > div > div.noSeries > div.wrap > div.mark_col");
+            Log.i("SeasonvarHttpClient", "parse string old items");
+            result.setHasNewEpisodes(parseHtmlMovieList(hasNew));
+            result.setOld(new ArrayList<Movie>());
+//            result.setOld(parseHtmlMovieList(noSeries));
         } catch (Exception e) {
             Log.e("Error", e.getMessage(), e);
         }
         return result;
     }
 
+    private ArrayList<Movie> parseHtmlMovieList(Elements elements) {
+        Log.i("SeasonvarHttpClient", "starting parseHtmlMovieList "+ elements.size());
+        ArrayList<Movie> result = new ArrayList<Movie>();
+        for (Element element : elements) {
+            if(element.hasClass("block"))
+            Log.d("Parser", element.text());
+            Movie movie = new Movie();
+            movie.setId(element.id());
+            movie.setLink(element.select("a").first().attr("href"));
+            movie.setImg(element.select("img.img").first().attr("src"));
+            movie.setTitle(element.select(".title").first().text());
+            try {
+                movie.setSeason(element.select(".season").first().text());
+            } catch (Exception e) {
+                movie.setSeason("");
+            }
+            try {
+                movie.setCurrent(element.select(".current").text());
+            } catch (Exception e) {
+                movie.setCurrent("");
+            }
+            movie.setLastDate(element.select(".last").first().text());
+            Elements translate = element.select(".lastupd, .translate");
+            if (translate.size() > 0) {
+                movie.setLastUpdate(translate.first().text());
+            } else {
+                movie.setLastUpdate("");
+            }
+            result.add(movie);
+        }
+        Log.i("SeasonvarHttpClient", "finished parseHtmlMovieList "+ elements.size());
+        return result;
+    }
+
     public List<JSONObject> getSerialVideoList(Movie m) throws URISyntaxException, IOException, JSONException {
         ArrayList<JSONObject> list = new ArrayList<JSONObject>();
         cookieStore.addCookie(new BasicClientCookie("html5default", "1"));
+        String link = m.getLink();
+        Log.i("SeasonvarHttpClient", "link is " + link);
         HttpUriRequest req = RequestBuilder.get()
-                .setUri(new URI(m.getLink()))
+                .setUri(new URI(link))
                 .addHeader("User-Agent", USER_AGENT)
                 .build();
         CloseableHttpResponse response = httpClient.execute(req);
@@ -145,7 +163,7 @@ public class SeasonvarHttpClient {
         Elements elements = Jsoup.parse(html).select("script");
         String script = "";
         for (Element el : elements) {
-            if (el.outerHtml().contains("$(\"#videoplayer719\").load(\"player.php\"")){
+            if (el.outerHtml().contains("$(\"#videoplayer719\").load(\"player.php\"")) {
                 script = el.outerHtml();
                 break;
             }
@@ -225,21 +243,21 @@ public class SeasonvarHttpClient {
 
     private void parsePlaylist(ArrayList<JSONObject> list, JSONObject arFilesMap, JSONObject json) throws JSONException {
         JSONArray playlist = json.getJSONArray("playlist");
-        for (int i=0; i < playlist.length(); i++){
+        for (int i = 0; i < playlist.length(); i++) {
             JSONObject episode = playlist.getJSONObject(i);
-            if (episode.has("playlist")){
+            if (episode.has("playlist")) {
                 parsePlaylist(list, arFilesMap, episode);
             } else {
                 list.add(episode);
                 String f = episode.getString("file");
-                f = f.substring(0, f.lastIndexOf("/")+1);
+                f = f.substring(0, f.lastIndexOf("/") + 1);
                 String code = episode.getString("galabel");
-                code = code.substring(code.indexOf("_")+1);
+                code = code.substring(code.indexOf("_") + 1);
                 Iterator keys = arFilesMap.keys();
-                while (keys.hasNext()){
+                while (keys.hasNext()) {
                     String key = (String) keys.next();
-                    if (arFilesMap.getString(key).equals(code)){
-                        f =f+key;
+                    if (arFilesMap.getString(key).equals(code)) {
+                        f = f + key;
                         break;
                     }
                 }
@@ -249,7 +267,7 @@ public class SeasonvarHttpClient {
         }
     }
 
-    public void markEpisode(Movie m, int episode){
+    public void markEpisode(Movie m, int episode) {
         String url = "http://seasonvar.ru/jsonMark.php";
         try {
             HttpUriRequest req = RequestBuilder.post()
@@ -270,4 +288,12 @@ public class SeasonvarHttpClient {
             e.printStackTrace();
         }
     }
+
+//    public static void main(String[] args) throws IOException {
+//        Elements elements = Jsoup.parse(new File("d:\\123.html"), "utf8").select("div.section > div.visible > div.newrap, div.section > div.visible > div.wrap > div.mark_col");
+//        Elements elements2 = Jsoup.parse(new File("d:\\123.html"), "utf8").select("div.section > div > div.noSeries > div.wrap > div.mark_col");
+//        for (Element element : elements) {
+//            Log.d("Parser", element.text());
+//        }
+//    }
 }

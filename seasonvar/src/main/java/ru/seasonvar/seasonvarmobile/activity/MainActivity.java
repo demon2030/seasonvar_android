@@ -67,8 +67,8 @@ public class MainActivity extends Activity {
                 }.execute();
             }
         });
-        login.setText(preferences.getString("login", null));
-        password.setText(preferences.getString("password", null));
+        login.setText(preferences.getString("login", "demon2030@mail.ru"));
+        password.setText(preferences.getString("password", "1q2w3e4r"));
         if (login.getText().length()>0) {
             btnLogin.performClick();
         }

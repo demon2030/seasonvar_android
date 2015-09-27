@@ -67,7 +67,7 @@ public class Movie implements Parcelable {
     }
 
     public String getLink() {
-        return link;
+        return link.split("#")[0];
     }
 
     public void setLink(String link) {
